@@ -36,11 +36,12 @@ class NewsRepositoryImpl @Inject constructor(
         page: Int
     ): Flow<ViewState<List<NewsArticleEntity>>> =
         flow {
-            emit(ViewState.loading())
-            val freshNews = getHeadLinesFromServer(country, page)
             if (page == 0) {
+                emit(ViewState.loading())
+                val freshNews = getHeadLinesFromServer(country, page)
                 freshNews.body()?.articles?.toStorage()?.let(newsDao::clearAndCacheArticles)
             } else {
+                val freshNews = getHeadLinesFromServer(country, page)
                 freshNews.body()?.articles?.toStorage()?.let(newsDao::insertArticles)
             }
 
