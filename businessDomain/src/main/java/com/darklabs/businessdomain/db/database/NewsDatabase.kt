@@ -24,6 +24,7 @@ abstract class NewsDatabase : RoomDatabase() {
         fun buildDefault(context: Context) =
             Room.databaseBuilder(context, NewsDatabase::class.java, databaseName)
                 .addMigrations(*NewsDatabaseMigration.allMigrations)
+                .allowMainThreadQueries()
                 .build()
 
         @VisibleForTesting
