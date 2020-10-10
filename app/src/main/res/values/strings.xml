@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">DailyDose</string>
+    <string name="app_name">Daily Planet</string>
+    <string name="error_name_not_available">Author name not available</string>
 </resources>
