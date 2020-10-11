@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Daily Planet</string>
     <string name="error_name_not_available">Author name not available</string>
+    <string name="title_select_country">Select Country Name to filter news.</string>
+    <string name="text_apply">Apply</string>
 </resources>

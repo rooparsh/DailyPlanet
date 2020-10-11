@@ -1,15 +1,17 @@
 package com.darklabs.dailydose.ui.screen.news
 
+import android.content.Context
 import android.os.Bundle
+import android.telephony.TelephonyManager
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumnForIndexed
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Card
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -19,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.ui.tooling.preview.Preview
 import com.darklabs.businessdomain.db.database.entity.NewsArticleEntity
 import com.darklabs.dailydose.R
@@ -27,6 +28,7 @@ import com.darklabs.dailydose.base.BaseActivity
 import com.darklabs.dailydose.ui.DailyDoseTheme
 import com.darklabs.dailydose.ui.component.ErrorState
 import com.darklabs.dailydose.ui.component.LoadingState
+import com.darklabs.dailydose.ui.component.SingleSelectDialog
 import com.darklabs.dailydose.ui.component.Toolbar
 import com.darklabs.dailydose.util.*
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,26 +40,26 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
 
     private val dialogState by lazy { mutableStateOf(false) }
 
-    private val countryName by lazy { countriesList[1] }
+    private var page = 0
 
-    private val selectedOption by lazy { mutableStateOf(countryName) }
+    private lateinit var selectedOption: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        selectedOption = (this.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
+                .networkCountryIso
+
+        newsViewModel.fetchNewsHeadLines(selectedOption, page)
         setContent {
             DailyDoseTheme {
                 Scaffold(topBar = {
                     Toolbar(getString(R.string.app_name)) {
                         dialogState.value = true
                     }
-                },
-                        drawerContent = {
-                            CountriesDialog()
-                        }) {
-
+                }) {
                     NewsScreen()
+                    CountriesDialog()
                 }
-
             }
         }
     }
@@ -65,37 +67,19 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
     @Composable
     fun CountriesDialog() {
         if (dialogState.value) {
-            Dialog(onDismissRequest = { dialogState.value = false }) {
-                Surface(modifier = Modifier.preferredWidth(300.dp),
-                        shape = RoundedCornerShape(10.dp)) {
-
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        countriesList.forEach { text ->
-                            Row(Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                            selected = (text == selectedOption.value),
-                                            onClick = { selectedOption.value = text }
-                                    )
-                                    .padding(horizontal = 16.dp)
-                            ) {
-                                RadioButton(
-                                        selected = (text == selectedOption.value),
-                                        onClick = { selectedOption.value = text }
-                                )
-                                Text(
-                                        text = text,
-                                        style = MaterialTheme.typography.body1.merge(),
-                                        modifier = Modifier.padding(start = 16.dp)
-                                )
-                            }
-                        }
-                    }
-
-                }
-            }
+            SingleSelectDialog(title = getString(R.string.title_select_country),
+                    optionsList = getCountries().values.toList(),
+                    defaultSelected = getCountries().keys.toList().indexOf(selectedOption),
+                    submitButtonText = getString(R.string.text_apply),
+                    onSubmitButtonClick = {
+                        selectedOption = getCountries().keys.toList()[it]
+                        page = 0
+                        newsViewModel.fetchNewsHeadLines(selectedOption, page)
+                    },
+                    onDismissRequest = { dialogState.value = false })
         }
     }
+
 
     @Composable
     @Preview
@@ -120,7 +104,8 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
         LazyColumnForIndexed(items = data) { index, item ->
             if (index == data.lastIndex) {
                 onActive {
-                    newsViewModel.fetchNewsHeadLines()
+                    page++
+                    newsViewModel.fetchNewsHeadLines(selectedOption, page)
                 }
             }
 

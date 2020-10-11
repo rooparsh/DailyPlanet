@@ -15,21 +15,14 @@ import kotlinx.coroutines.launch
 class NewsViewModel @ViewModelInject constructor(private val newsRepository: NewsRepository) :
         BaseViewModel() {
 
-    var page = 0
 
     private var _newsArticle = MutableLiveData<ViewState<List<NewsArticleEntity>>>()
     val newsArticle = _newsArticle as LiveData<ViewState<List<NewsArticleEntity>>>
 
-    init {
-        fetchNewsHeadLines()
-    }
-
-
-    fun fetchNewsHeadLines() {
+    fun fetchNewsHeadLines(countryName: String, page: Int) {
         viewModelScope.launch {
-            page += 1
             val data = with(Dispatchers.IO) {
-                newsRepository.getNewsTopHeadlines("in", page)
+                newsRepository.getNewsTopHeadlines(countryName, page)
             }
 
             data.collect { _newsArticle.value = it }
