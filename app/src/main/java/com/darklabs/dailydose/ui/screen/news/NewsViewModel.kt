@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class NewsViewModel @ViewModelInject constructor(private val newsRepository: NewsRepository) :
-    BaseViewModel() {
+        BaseViewModel() {
 
     var page = 0
 

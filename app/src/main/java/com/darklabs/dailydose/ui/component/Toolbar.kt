@@ -1,27 +1,25 @@
 package com.darklabs.dailydose.ui.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Text
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.loadVectorResource
+import com.darklabs.dailydose.R
 
 @Composable
-fun Toolbar(title: String) {
+fun Toolbar(title: String, onFilterClick: () -> Unit) {
     TopAppBar(
-        modifier = Modifier.fillMaxWidth(),
-        backgroundColor = MaterialTheme.colors.primaryVariant
-    ) {
-        Box(modifier = Modifier.fillMaxSize().align(Alignment.CenterVertically)) {
-            Text(
-                modifier = Modifier.fillMaxSize().align(Alignment.Center),
-                text = title,
-                style = MaterialTheme.typography.body1
-            )
-        }
-    }
+            title = { Text(text = title) },
+            actions = {
+                val image = loadVectorResource(id = R.drawable.ic_filter)
+                image.resource.resource?.let {
+                    Image(asset = it, modifier = Modifier.clickable(onClick = onFilterClick))
+                }
+            },
+            backgroundColor = MaterialTheme.colors.primaryVariant
+    )
 }
