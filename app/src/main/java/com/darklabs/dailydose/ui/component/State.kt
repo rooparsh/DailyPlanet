@@ -1,19 +1,19 @@
 package com.darklabs.dailydose.ui.component
 
 import androidx.compose.foundation.Text
-import androidx.compose.foundation.layout.Column
+import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 
 @Composable
 fun LoadingState(loadingText: String = "Loading") {
-    Column {
+    Surface {
         Text(text = loadingText)
     }
 }
 
 @Composable
 fun ErrorState(errorText: String = "Error") {
-    Column {
+    Surface {
         Text(text = errorText)
     }
 }

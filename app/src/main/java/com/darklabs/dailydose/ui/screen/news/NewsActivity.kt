@@ -9,6 +9,8 @@ import androidx.compose.foundation.Text
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumnForIndexed
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -42,14 +44,22 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
 
     private var page = 0
 
-    private lateinit var selectedOption: String
+
+    private var selectedOption: String = ""
+        set(value) {
+            field = value
+            page = 0
+            newsViewModel.fetchNewsHeadLines(value, page)
+        }
+
+    private var countriesMap: Map<String, String>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         selectedOption = (this.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
                 .networkCountryIso
-
-        newsViewModel.fetchNewsHeadLines(selectedOption, page)
+        newsViewModel.fetchCountries()
+        observeCountriesList()
         setContent {
             DailyDoseTheme {
                 Scaffold(topBar = {
@@ -59,24 +69,31 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
                 }) {
                     NewsScreen()
                     CountriesDialog()
+                    //PaginationDemo()
                 }
             }
         }
     }
 
+    private fun observeCountriesList() {
+        newsViewModel.countries.observeNotNull(this, { countriesMap = it })
+    }
+
     @Composable
     fun CountriesDialog() {
         if (dialogState.value) {
-            SingleSelectDialog(title = getString(R.string.title_select_country),
-                    optionsList = getCountries().values.toList(),
-                    defaultSelected = getCountries().keys.toList().indexOf(selectedOption),
-                    submitButtonText = getString(R.string.text_apply),
-                    onSubmitButtonClick = {
-                        selectedOption = getCountries().keys.toList()[it]
-                        page = 0
-                        newsViewModel.fetchNewsHeadLines(selectedOption, page)
-                    },
-                    onDismissRequest = { dialogState.value = false })
+            countriesMap?.let { map ->
+                val keysList = map.keys.toList()
+                val valuesList = map.values.toList()
+                SingleSelectDialog(title = getString(R.string.title_select_country),
+                        optionsList = valuesList,
+                        defaultSelected = keysList.indexOf(selectedOption),
+                        submitButtonText = getString(R.string.text_apply),
+                        onSubmitButtonClick = {
+                            selectedOption = keysList[it]
+                        },
+                        onDismissRequest = { dialogState.value = false })
+            }
         }
     }
 
@@ -85,14 +102,14 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
     @Preview
     fun NewsScreen() {
         val state: ViewState<List<NewsArticleEntity>>? by newsViewModel.newsArticle.observeAsState()
-        handleState(state)
-
+        val paginationState = rememberLazyListState()
+        handleState(state, paginationState)
     }
 
     @Composable
-    private fun handleState(state: ViewState<List<NewsArticleEntity>>?) {
+    private fun handleState(state: ViewState<List<NewsArticleEntity>>?, paginationState: LazyListState) {
         when (state) {
-            is ViewState.Success -> SuccessState(state.data)
+            is ViewState.Success -> SuccessState(state.data, paginationState)
             is ViewState.Loading -> LoadingState()
             is ViewState.Error -> ErrorState()
         }
@@ -100,8 +117,8 @@ class NewsActivity : BaseActivity<NewsViewModel>() {
 
 
     @Composable
-    fun SuccessState(data: List<NewsArticleEntity>) {
-        LazyColumnForIndexed(items = data) { index, item ->
+    fun SuccessState(data: List<NewsArticleEntity>, paginationState: LazyListState) {
+        LazyColumnForIndexed(items = data, state = paginationState) { index, item ->
             if (index == data.lastIndex) {
                 onActive {
                     page++
